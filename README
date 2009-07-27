@@ -1,0 +1,13 @@
+pdf2svg
+
+This is a simple perl script that converts pages of specified PDF documents
+into respective SVG files.  This is script is similar to the C implementation
+available here (http://www.cityinthesky.co.uk/pdf2svg.html), but in Perl.
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2009 Indraniel Das
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
