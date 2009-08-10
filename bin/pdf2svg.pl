@@ -11,23 +11,32 @@ use Cairo;
 use Poppler;
 
 $| = 1; # enable AUTOFLUSH mode
-my @pages;
+my (@pages, $opt_all, $opt_help);
 
-GetOptions("page:i{,}" => \@pages);
+GetOptions(
+    "page:i{,}" => \@pages,
+    all         => $opt_all,
+    help        => $opt_help
+);
 
-@pages = qw(1) unless (@pages);
+@pages = qw(1) unless (@pages && not defined $opt_all);
 
 my @pdfs = @ARGV;
 
 for my $pdf (@pdfs) {
     die "[err] Did not find file: $pdf\n" unless (-e $pdf);
     my $pdf_uri = construct_file_uri($pdf);
+
+    my $poppler = Poppler::Document->new_from_file($pdf_uri);
+    if ($opt_all) {
+        my $total_pages = $poppler->get_n_pages;
+        @pages = (1 .. $total_pages);
+    }
+
     for my $page (@pages) {
         print "Converting $pdf -- page : $page ...";
         my $svg = create_svg_filename($pdf, $page);
 
-        # setup poppler
-        my $poppler = Poppler::Document->new_from_file($pdf_uri);
         my $page = $poppler->get_page( $page - 1 );
         my $dimension = $page->get_size;
 
