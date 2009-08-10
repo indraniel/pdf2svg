@@ -6,6 +6,7 @@ use strict;
 use v5.10.0;
 
 use Getopt::Long;
+use Pod::Usage;
 use Cwd;
 use Cairo;
 use Poppler;
@@ -17,6 +18,12 @@ GetOptions(
     "page:i{,}" => \@pages,
     all         => $opt_all,
     help        => $opt_help
+);
+
+pod2usage(1) if $opt_help;
+pod2usage(
+    -exitval => 2,
+    -verbose => 0,
 );
 
 @pages = qw(1) unless (@pages && not defined $opt_all);
@@ -76,3 +83,59 @@ sub create_svg_filename {
     $svg =~ s/(pdf)$/$page\.svg/g;
     return $svg;
 }
+
+__END__
+
+=head1 NAME
+
+pdf2svg - convert pdf file(s) to svg file(s)
+
+=head1 SYNOPSIS
+
+pdf2svg [options] [pdf files ...]
+
+ Options:
+   -help            brief help message
+   -all             convert all pages in respective pdf files
+   -pages           specify list of pages in pdf file to convert
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-help>
+
+Print a brief help message and exits.
+
+=item B<-all>
+
+Convert all pages in each respective pdf file specified on the command line.
+
+=item B<-pages>
+
+Specify a list of which pages to convert in the list of pdf files specified
+on the command line.
+
+=back
+
+=head1 DESCRIPTION
+
+B<pdf2svg> will process the given input pdf file(s) and convert the
+appropriate pages into svg file(s).
+
+If no pages are specified via the I<-all> or I<-pages> options the first
+page of each pdf file will be set for conversion into a SVG formatted file.
+
+=head1 EXAMPLES
+
+=head1 AUTHOR
+
+Indraniel Das <indraniel@gmail.com>
+
+=head1 SEE ALSO
+
+Poppler, Cairo
+
+=head1 LICENSE AND COPYRIGHT
+
+=cut
