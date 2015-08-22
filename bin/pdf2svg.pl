@@ -5,26 +5,26 @@ use strict;
 
 use v5.10.0;
 
-use Getopt::Long;
-use Pod::Usage;
-use Cwd;
-use Cairo;
-use Poppler;
+use Getopt::Long();
+use Pod::Usage();
+use Cwd();
+use Cairo();
+use Poppler();
+use URI::Escape();
 
 $| = 1; # enable AUTOFLUSH mode
 my (@pages, $opt_all, $opt_help);
 
-GetOptions(
-    "page:i{,}" => \@pages,
-    all         => $opt_all,
-    help        => $opt_help
+Getopt::Long::GetOptions(
+    "pages:i{,}" => \@pages,
+    all         => \$opt_all,
+    help        => \$opt_help
 );
 
-pod2usage(1) if $opt_help;
 pod2usage(
-    -exitval => 2,
-    -verbose => 0,
-);
+    -exitval => 0,
+    -verbose => 2,
+) if $opt_help;
 
 @pages = qw(1) unless (@pages && not defined $opt_all);
 
@@ -65,10 +65,46 @@ for my $pdf (@pdfs) {
 exit(0);
 
 sub construct_file_uri {
-    my $file = shift;
-    my $path = Cwd::abs_path($file);
-    $path = 'file://' . $path;
-    return $path;
+    my $path = shift;
+    #apparently, neither URL not URI modules can
+    #convert URI<-local path in Cygwin. Blah! They're useless.
+    $path = File::Spec->rel2abs($path);
+    my ($drive,$dirs,$file)=File::Spec->splitpath($path);
+    # in Win32, `C:' or `\\server\share' goes into $drive,
+    # in Cygwin, both go into $dirs. Perl, quirky as ever.
+    my @dirs=File::Spec->splitdir($dirs);
+    my @drive=File::Spec->splitdir($drive);
+    my $drive_is_unc = $#drive>2;
+    my $dirs_is_unc = !$drive_is_unc && $#dirs>2 
+        && $dirs[0]eq"" && $dirs[1]eq"";
+
+    #Spec: RFC1738, 3.10; RFC3986, 2.5 (UTF-8),
+    #https://en.wikipedia.org/wiki/File_URI_scheme#Windows_2 (drive letter)
+    my $url = "file://";
+    if ($drive_is_unc) {
+        #well, not _entirely_ useless
+        @drive=map(URI::Escape::uri_escape_utf8($_),@drive);
+    }
+    $url.= $drive_is_unc ? join('/',@drive[2,-1]) :
+        ($drive?"/$drive":"");
+    {
+        #not quoting the `:' after a drive letter
+        #_is_ Windows-specific
+        my $i = (($^O eq "cygwin") && $#dirs>0 &&
+            $dirs[0]=~/^[A-Za-z]:$/) ? 1:0;
+        foreach(@dirs[$i,-1])
+            {$_ = URI::Escape::uri_escape_utf8($_);}
+    }
+    $url.= $dirs_is_unc ? join('/',@dirs[2,-1]) :
+        "/".join('/',@dirs);
+    #typically, there's a trailing slash in $dirs that's
+    #transformed into a blank member
+    $url.=($#dirs>0 && $dirs[-1]eq"")?$file:'/'.$file;
+    return $url;
+}
+
+sub undef_($) {
+        return defined($_[0])?$_[0]:"";
 }
 
 sub create_svg_filename {
