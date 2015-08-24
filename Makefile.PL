@@ -11,7 +11,7 @@ WriteMakefile(
       ? ('LICENSE'=> 'perl')
       : ()),
     ABSTRACT_FROM       => 'bin/pdf2svg.pl',
-    EXE_FILES            => ['bin/pdf2svg.pl']
+    EXE_FILES            => ['bin/pdf2svg.pl'],
     PREREQ_PM => {
         'Test::More' => 0,
         'Cairo'      => 1.060,
